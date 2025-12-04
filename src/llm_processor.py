@@ -8,27 +8,17 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def extract_key_values(full_text):
 
+    # IMPORTANT — ESCAPED ALL BRACES {{ }}
     prompt = f"""
 You are an AI system that converts unstructured PDF text into structured key:value pairs.
 
-RULES:
-- You MUST return ONLY VALID JSON.
-- Keys must NOT be predefined.
-- You MUST infer human-meaningful keys from the text.
-- Every piece of information from the PDF MUST be captured.
-- If something does not fit a key:value structure, place it inside "Comments".
-- Preserve EXACT original wording in values.
-- DO NOT summarize. DO NOT drop ANY information.
-- Multi-line text must be preserved.
-- Return a LIST of objects.
-
-OUTPUT FORMAT (ESCAPED – DO NOT CHANGE):
+OUTPUT FORMAT (MUST FOLLOW EXACTLY):
 
 [
   {{
     "key": "Some Key",
-    "value": "Original text exactly from PDF",
-    "comments": "More extracted context if needed"
+    "value": "Exact text from PDF",
+    "comments": "Context taken exactly from PDF"
   }},
   {{
     "key": "Another Key",
@@ -37,15 +27,27 @@ OUTPUT FORMAT (ESCAPED – DO NOT CHANGE):
   }}
 ]
 
-NOW PROCESS THIS TEXT:
+RULES:
+- DO NOT predefine keys. Infer keys logically (e.g., First Name, Birth City, Age, Current Salary, Degree, CGPA).
+- Use human-like clean key names.
+- DO NOT drop or summarize information.
+- Use context sentences as comments.
+- Multi-line values allowed.
+- Maintain original wording.
+- Capture 100% of the PDF text either as a value or in comments.
+- NO explanation outside JSON.
+- NO extra text outside JSON.
+- Return ONLY valid JSON.
+- For ambiguous text, place in 'comments' field.
 
+PDF TEXT TO PROCESS:
 \"\"\"{full_text}\"\"\"
 
-Return ONLY the JSON. Nothing else.
+Now return ONLY the JSON list.
 """
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini", 
+        model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
         temperature=0
     )
@@ -55,7 +57,6 @@ Return ONLY the JSON. Nothing else.
     try:
         return json.loads(content)
     except:
-        # fallback for ANY model failure → ALL TEXT is captured
         return [{
             "key": "UNSTRUCTURED_BLOCK",
             "value": full_text,

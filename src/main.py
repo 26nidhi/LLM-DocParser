@@ -15,7 +15,7 @@ def main():
     print("Writing Excel...")
     write_to_excel(rows, output_path)
 
-    print("DONE → Output.xlsx generated successfully.")
+    print("DONE! Output saved to Output.xlsx")
 
 if __name__ == "__main__":
     main()
